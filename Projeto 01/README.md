@@ -7,8 +7,8 @@
 * Fernando Dos Reis Santos Filho                    RA: 234471
 
 ## Descrição
-Neste projeto teremos uma matriz quadrada (nxn) armazenada em um vetor bidimensional criado a partir do input de n. Já as palavras que serão buscadas na matriz estarão serão recebidas através de um input e armazenadas em outro vetor.Por fim, cada thread ficará responsável por uma varredura completa da matriz em busca de uma única palavra.
+O projeto consiste no processamento de uma matriz quadrada (orden n) que será fornecida como entrada pelo usuário. As palavras a serem buscadas, caso estejam na matriz, serão fornecidas pelo usuário também e com a utilização de threads iremos percorrer a matriz a procura das palavras fornecidas pelo usuário. Cada thread ficará encarregada da busca na matriz de uma única palavra. Ao final do processo será informado para o usuário a palavra que ele solicitou a busca e se ela foi encontrada na matriz ou não. A sincronização das threads é realizado através do método join da biblioteca pthread no qual estamos utilizando para este projeto.
 
 ## Divisão do trabalho
-Dividimos o trabalho da seguinte maneira: Lucas e Leonardo fizeram a contrução da funcão que as threads iram chamar, Fernando criou a função main, onde organizou as thredas, e fez a apresentação em video. Por fim Leonardo fez a documentação da equipe para a entrega.
+O trabalho foi dividido da seguinte maneira: Os membros Lucas e Leonardo fizeram a construção da função no qual as threads iriam chamar, ou seja, a função de processamento da matriz para a busca das palavras do caça-palavra. O Fernando criou a função main, no qual ele organizou as threads e fez a apresentação do vídeo mostrando o funcionamento do algorimto e uma breve explicação do mesmo. Por fim, Lucas e Leonardo fizeram a documentação da equipe para a entrega.
 
