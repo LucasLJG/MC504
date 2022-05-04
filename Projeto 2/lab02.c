@@ -53,7 +53,7 @@ void* leitura_de_dados(void* arg){
         printf("Não há nada a ser lido.");
     }
     else{
-        printf("%s", nuvem[pos]);
+        printf("%s \n", nuvem[pos]);
     }
 
    sem_wait(&mutex);;   // um leitor deseja sair 
