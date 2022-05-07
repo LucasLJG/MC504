@@ -5,8 +5,17 @@
 #include <semaphore.h>
 #include <time.h>
 #include <stdbool.h> 
+#include <unistd.h>
 
-char matriz[20][72] = {"O importante não é vencer todos os dias, mas lutar sempre.",
+#define N_LEITORES 4
+#define N_ESCRITORES 2
+
+//Guardar o estado de atividade da pessoa (lendo/escrevendo ou inativo)
+typedef enum {inativo, ativo} estado_pessoa;
+estado_pessoa estadoLeitor[N_LEITORES];
+estado_pessoa estadoEscritor[N_ESCRITORES];
+
+char textos[20][72] = {"O importante não é vencer todos os dias, mas lutar sempre.",
  "Maior que a tristeza de não haver vencido é a vergonha ...!", 
  "É melhor conquistar a si mesmo do que vencer mil batalhas.", 
  "Quem ousou conquistar e saiu pra lutar, chega mais longe!", 
@@ -25,82 +34,203 @@ char matriz[20][72] = {"O importante não é vencer todos os dias, mas lutar sem
  "O mundo está perdido para aqueles que o querem ganhar.", 
  "Quem sabe o que se pode ganhar num dia jamais furta.", 
  "Loteria: acho que, jogando ou não, você tem a mesma chance de ganhar",
- "A avareza perde tudo ao pretender ganhar tudo."}; 
-char nuvem[20][72]; // matriz que receberá as frases dos escritores
-int contador_de_leitores;
-sem_t mutex, wrt; // declaracao dos semaforos
+ "A avareza perde tudo ao pretender ganhar tudo."}; //Repositorio a ser feito upload na nuvem
+char cloud[20][72]= {"                                                                      ",
+ "                                                                      ", 
+ "                                                                      ",
+ "                                                                      ",
+ "                                                                      ",
+ "                                                                      ",
+ "                                                                      ",
+ "                                                                      ", 
+ "                                                                      ",
+ "                                                                      ",
+ "                                                                      ",
+ "                                                                      ",
+ "                                                                      ",
+ "                                                                      ",
+ "                                                                      ",
+ "                                                                      ",
+ "                                                                      ",
+ "                                                                      ",
+ "                                                                      ",
+ "                                                                      "}; // matriz que receberá as frases dos escritores
+char phrase[72];
+
+int cnt_leitores_ativos;
+sem_t sem_leitor, sem_escritor; // declaracao dos semaforos
+
+// Na funcao animacao, sera printada as caixas que seriam os Translators, a Cloud e os Readers
+void animation(){
+
+    // Começando pelas caixas dos Translators, primeiro printamos os seus nomes.
+    for (int i = 0; i < 2; i ++)
+        printf("\t\t\t\t\t\tTranslator %d", i + 1);
+    printf("\n");
+
+    // Depois printamos as partes de cima das caixas.
+    for (int i = 0; i < 2; i ++)
+        printf("\t{----------------------------------------------------------------------}\t\t");
+    printf("\n");
+
+    // Em seguida, printamos o status dos Translators.
+    if (estadoEscritor[0] == inativo && estadoEscritor[1] == inativo)
+        printf("\t{Translating .....                                                     }\t\t\t{Translating .....                                                     }\n");
+    else if (estadoEscritor[0] == inativo && estadoEscritor[1] == ativo)
+        printf("\t{Translating .....                                                     }\t\t\t{%s}\n", phrase);
+    else 
+        printf("\t{%s}\t\t\t{Translating .....                                                     }\n", phrase);
+
+    // Por fim, printamos a parte de baixo das caixas.
+    for (int i = 0; i < 2; i ++)
+        printf("\t{----------------------------------------------------------------------}\t\t");
+    printf("\n\n\n\n\n\n");
+
+    // Printa o caixa da Cloud
+    printf("\t\t\t\t\t\t                                      Cloud                                 \n");
+    printf("\t\t\t\t\t\t    {^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^}\n");
+    for (int i = 0; i < 20; i ++){
+        if (estadoEscritor[0] == ativo && estadoEscritor[1] == inativo)
+            printf("\t\t\t\t\t\t{UPLOANDING.........                                                   }\n");
+        else if (estadoEscritor[0] == inativo && estadoEscritor[1] == ativo)
+            printf("\t\t\t\t\t\t    {UPLOANDING.........                                                   }\n");
+        else 
+            printf("\t\t\t\t\t\t    {%s}\n", cloud[i]);
+    }
+    printf("\t\t\t\t\t\t    {~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}\n\n\n\n\n");
+
+
+    // Comecando as caixas dos Readers, primeiro printamos os nomes dos dois primeiros.
+    printf("\t\t\t                Reader 1                            \t\t\t\t                                Reader 2\n");
+
+    // Depois printamos as partes de cima das caixas dos dois primeiros.
+    for (int i = 0; i < 2; i ++)
+        printf("\t{----------------------------------------------------------------------}\t\t");
+    printf("\n");
+
+    // Em seguida, printamos o status dos dois primeiros Readers.
+    for (int i = 0; i < 20; i ++){
+        if (estadoLeitor[0] == ativo && estadoLeitor[1] == ativo)
+            printf("\t{Downloading .....                                                     }\t\t\t{Downloading .....                                                     }\n");
+        else if (estadoLeitor[0] == ativo && estadoLeitor[1] == inativo)
+            printf("\t{Downloading .....                                                     }\t\t\t{%s}\n", cloud[i]);
+        else if (estadoLeitor[0] == inativo && estadoLeitor[1] == ativo)
+            printf("\t{%s}\t\t\t{Downloading .....                                                     }\n", cloud[i]);
+        else
+            printf("\t{%s}\t\t\t{%s}\n", cloud[i], cloud[i]);
+    }
+
+    // Por fim, printamos a parte de baixo das caixas dos dois ultimos Readers.
+    for (int i = 0; i < 2; i ++)
+        printf("\t{----------------------------------------------------------------------}\t\t");
+    printf("\n");
+
+    // Comecando as caixas dos Readers, primeiro printamos os nomes dos dois ultimos.
+    printf("\t\t\t                Reader 3                            \t\t\t\t                                Reader 4\n");
+
+    // Depois printamos as partes de cima das caixas dos dois primeiros.
+    for (int i = 0; i < 2; i ++)
+        printf("\t{----------------------------------------------------------------------}\t\t");
+    printf("\n");
+
+    // Em seguida, printamos o status dos dois ultimos Readers.
+    for (int i = 0; i < 20; i ++){
+        if (estadoLeitor[2] == ativo && estadoLeitor[3] == ativo)
+            printf("\t{Downloading .....                                                     }\t\t\t{Downloading .....                                                     }\n");
+        else if (estadoLeitor[2] == ativo && estadoLeitor[3] == inativo)
+            printf("\t{Downloading .....                                                     }\t\t\t{%s}\n", cloud[i]);
+        else if (estadoLeitor[2] == inativo && estadoLeitor[3] == ativo)
+            printf("\t{%s}\t\t\t{Downloading .....                                                     }\n", cloud[i]);
+        else
+            printf("\t{%s}\t\t\t{%s}\n", cloud[i], cloud[i]);
+    }
+
+    // Por fim, printamos a parte de baixo das caixas dos dois ultimos Readers.
+    for (int i = 0; i < 2; i ++)
+        printf("\t{----------------------------------------------------------------------}\t\t");
+    printf("\n");
+}
 
 void* leitura_de_dados(void* arg){
-    do {
+    long int id = (long int) arg;
     
-   // Leitores desejam entrar na area critica.
-   sem_wait(&mutex);
+    // Leitores desejam entrar na area critica.
+    sem_wait(&sem_leitor);
+    estadoLeitor[id] = ativo;
 
-   // contador do numero de leitores é incrementado em 1
-   contador_de_leitores++;                          
+    // contador do numero de leitores é incrementado em 1
+    cnt_leitores_ativos++;                          
 
-   // Se tiver pelo menos um leitor na area critica, então nenhum escritor poderá entrar, portanto, a preferência fica com o leitor.
-   if (contador_de_leitores == 1){
-      sem_wait(&wrt);  
-   }                         
+    // Se tiver pelo menos um leitor na area critica, então nenhum escritor poderá entrar, portanto, a preferência fica com o leitor.
+    if (cnt_leitores_ativos == 1){
+        sem_wait(&sem_escritor);  
+    }                         
 
-   // enquanto esse leitor atual está dentro da area critica, outros leitores conseguem entrar tambem.
-   sem_post(&mutex);                   
+    // enquanto esse leitor atual está dentro da area critica, outros leitores conseguem entrar tambem.
+    sem_post(&sem_leitor);                   
 
-   // o leitor atual realiza a leitura
-    int pos =  (rand() % 19); // posicao do vetor
-    if (nuvem[pos] == NULL){
-        printf("Não há nada a ser lido.");
+    // o leitor atual realiza a leitura
+    for (int pos = 0; pos < 20; pos++)
+    {
+        // animation(); APRIMORAR AS CHAMADAS DAS ANIMACOES
+        sleep(1);
     }
-    else{
-        printf("%s \n", nuvem[pos]);
-    }
+    
+    estadoLeitor[id] = inativo;
+    sem_wait(&sem_leitor);   // um leitor deseja sair 
 
-   sem_wait(&mutex);;   // um leitor deseja sair 
+    cnt_leitores_ativos--;
 
-   contador_de_leitores--;
+    // Nenhum leitor é deixado na area critica
+    if (cnt_leitores_ativos == 0) 
+        sem_post(&sem_escritor);         // escritores estao autorizados a entrar
 
-   // Nenhum leitor é deixado na area critica
-   if (contador_de_leitores == 0) 
-       sem_post(&wrt);         // escritores estao autorizados a entrar
-
-   sem_post(&mutex); // leitor sai da area critica
-
-    } while(true);
+    sem_post(&sem_leitor); // leitor sai da area critica
 }
 
 void* escrita_de_dados(void* arg){
-    do {
+    long int id = (long int) arg;
+
     // escritores solicitam a entrada na area critica.
-    sem_wait(&wrt);  
-   
+    sem_wait(&sem_escritor);  
+    estadoEscritor[id] = ativo;
+        
     // realizam a escrita
     srand(time(NULL)); // inicializa o gerador de numeros aleatorios com o valor da funcao time(NULL)
-  
+        
     // gerando valores aleatórios na faixa de 0 a 19
     int pos =  (rand() % 19); // posicao do vetor
-    strcpy (nuvem[pos], matriz[pos]);	/* Copia str1 em str2 */
-    // saida da area critica
-    sem_post(&wrt);
+    strcpy (cloud[pos], textos[pos]);	/* Copia str1 em str2 */
+    // animation(); APRIMORAR AS CHAMADAS DAS ANIMACOES
+    sleep(rand()%3);
 
-    } while(true);
+    estadoEscritor[id] = inativo;
+    // saida da area critica
+    sem_post(&sem_escritor);
 }
 
 int main(){
-    sem_init(&mutex, 0, 1); // inicializando semaforo
-    sem_init(&wrt, 0, 1);
     pthread_t threads[6];
-    for(int i = 0; i < 2; i++){
-        pthread_create(&threads[i], NULL, escrita_de_dados , matriz); // escrita dos dados
+    long int id;
+
+    sem_init(&sem_leitor, 0, 1); // inicializando semaforo
+    sem_init(&sem_escritor, 0, 1);
+
+    // animation(); APRIMORAR AS CHAMADAS DAS ANIMACOES
+
+    for(id = 0; id < 2; id++){
+        estadoEscritor[id] = inativo;
+        pthread_create(&threads[id], NULL, escrita_de_dados, (void *)id); // escrita dos dados
     }
-    for(int i = 2; i < 6; i++){
-        pthread_create(&threads[i], NULL, leitura_de_dados, matriz); // leitura dos dados
+    for(id = 2; id < 6; id++){
+        estadoLeitor[id] = inativo;
+        pthread_create(&threads[id], NULL, leitura_de_dados, (void *)id); // leitura dos dados
     }
     for(int i = 0; i < 6; i++){
         pthread_join(threads[i], NULL);
     }
 
-    sem_destroy(&mutex); // destruindo o semaforo
-    sem_destroy(&wrt);
+    sem_destroy(&sem_leitor); // destruindo o semaforo
+    sem_destroy(&sem_escritor);
     return 0;
 }
