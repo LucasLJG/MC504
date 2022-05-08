@@ -292,14 +292,11 @@ void* escrita_de_dados(void* arg){
         if (linhas_preenchidas < 20){
             estadoEscritor[id] = ativo;
             
-            // realizam a escrita
-            srand(time(NULL)); // inicializa o gerador de numeros aleatorios com o valor da funcao time(NULL)
         
             // gerando valores aleatórios na faixa de 0 a 19
-            int pos =  (rand() % 19); // posicao do vetor
-            strcpy (cloud[linhas_preenchidas], textos[pos]);	/* Copia str1 em str2 */
+            strcpy (cloud[linhas_preenchidas], textos[linhas_preenchidas]);	/* Copia str1 em str2 */
+            strcpy (phrase, textos[linhas_preenchidas]);
             linhas_preenchidas ++;
-            strcpy (phrase, textos[pos]);
             animation();
             estadoEscritor[id] = inativo;
             animation();
